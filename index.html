@@ -7,6 +7,53 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
         <meta charset="utf-8">
 
+        <!-- Save Export/Import Handler -->
+        <script>
+          // Extract all cookies into an object
+          function getAllCookies() {
+            const cookies = document.cookie.split(';');
+            const allData = {};
+            
+            cookies.forEach(cookie => {
+              const trimmed = cookie.trim();
+              if (trimmed) {
+                const [key, value] = trimmed.split('=');
+                if (key) {
+                  allData[decodeURIComponent(key)] = decodeURIComponent(value);
+                }
+              }
+            });
+            
+            return allData;
+          }
+
+          // Listen for save requests from external parent page
+          window.addEventListener('message', function(e) {
+            // Handle save export request
+            if (e.data === 'REQUEST_SAVE') {
+              const allData = getAllCookies();
+              e.source.postMessage({ 
+                type: 'SAVE_DATA', 
+                payload: allData 
+              }, '*');
+            }
+            
+            // Handle save import request
+            if (e.data.type === 'INJECT_SAVE') {
+              try {
+                const saves = e.data.payload;
+                Object.keys(saves).forEach(key => {
+                  // Use the game's existing cookie functions
+                  cookieSet(key, saves[key], 365);
+                });
+                e.source.postMessage({ type: 'SAVE_INJECTED' }, '*');
+              } catch(error) {
+                e.source.postMessage({ type: 'SAVE_INJECT_ERROR', error: error.message }, '*');
+              }
+            }
+          });
+        </script>
+
         <!-- <script src="/poki-sdk.js"></script> -->
 
         <!-- Set the title bar of the page -->
@@ -297,8 +344,8 @@
     <body style="overflow: hidden;">
 
           
-            
-            
+             
+             
 
         <div class="gm4html5_div_class" id="gm4html5_div_id" style="padding-top: 20px; position: absolute; height: 488px;">
             <canvas id="canvas" width="640" height="360" style="position: absolute; left: 0px; top: 0px; width: 640px; height: 360px;">
